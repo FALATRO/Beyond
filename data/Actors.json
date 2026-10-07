@@ -1,0 +1,7 @@
+[
+null,
+{"id":1,"battlerName":"","characterIndex":0,"characterName":"$Zap","classId":1,"equips":[1,1],"faceIndex":3,"faceName":"Zap","traits":[],"initialLevel":1,"maxLevel":99,"name":"Zap","nickname":"","note":"","profile":"The main guy. (A bum)"},
+{"id":2,"battlerName":"","characterIndex":0,"characterName":"$Arnold","classId":1,"equips":[0,0],"faceIndex":1,"faceName":"Arnold","traits":[{"code":51,"dataId":13,"value":1},{"code":52,"dataId":7,"value":1}],"initialLevel":1,"maxLevel":99,"name":"Arnold","nickname":"","note":"<Equip Slot>\nWeapon\nAccessory\n</Equip Slot>\n\n\n","profile":"The boy in VHS 1."},
+{"id":3,"battlerName":"","characterIndex":0,"characterName":"$Asher","classId":2,"equips":[0,0],"faceIndex":2,"faceName":"Asher","traits":[{"code":51,"dataId":13,"value":1},{"code":52,"dataId":7,"value":1}],"initialLevel":1,"maxLevel":99,"name":"Asher","nickname":"","note":"<Equip Slot>\nWeapon\nAccessory\n</Equip Slot>\n","profile":"Fake friend."},
+{"id":4,"battlerName":"","characterIndex":0,"characterName":"$Untitled_Artwork","classId":1,"equips":[0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Kate","nickname":"","note":"","profile":"The girl in VHS 2."}
+]
