@@ -3300,14 +3300,18 @@ Input._onLostFocus = function() {
  */
 Input._pollGamepads = function() {
     if (navigator.getGamepads) {
-        var gamepads = navigator.getGamepads();
-        if (gamepads) {
-            for (var i = 0; i < gamepads.length; i++) {
-                var gamepad = gamepads[i];
-                if (gamepad && gamepad.connected) {
-                    this._updateGamepadState(gamepad);
+        try {
+            var gamepads = navigator.getGamepads();
+            if (gamepads) {
+                for (var i = 0; i < gamepads.length; i++) {
+                    var gamepad = gamepads[i];
+                    if (gamepad && gamepad.connected) {
+                        this._updateGamepadState(gamepad);
+                    }
                 }
             }
+        } catch (e) {
+            // Silently fail if gamepad access is denied by permissions policy
         }
     }
 };
