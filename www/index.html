@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        
         <!-- Custom Raw.Githack CDN link for your GitHub repository -->
         <base href="https://raw.githack.com/FALATRO/Beyond/master/www/">
 
@@ -154,6 +155,19 @@ if (typeof PIXI !== 'undefined' && PIXI.loader) {
             resource.data.crossOrigin = 'anonymous';
         }
         next();
+    });
+}
+// Diagnostic: Log every image URL being loaded to find the culprit
+var _origImageSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+if (_origImageSrc) {
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        set: function(url) {
+            console.log("Loading Asset:", url);
+            _origImageSrc.set.call(this, url);
+        },
+        get: function() {
+            return _origImageSrc.get.call(this);
+        }
     });
 }
         </script>
