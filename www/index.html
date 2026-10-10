@@ -1,22 +1,40 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <!-- Custom jsDelivr CDN link for your repository -->
+        <base href="https://cdn.jsdelivr.net/gh/FALATRO/Beyond@master/www/">
+
         <meta charset="UTF-8">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="viewport" content="user-scalable=no">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
         <link rel="icon" href="icon/icon.png" type="image/png">
         <link rel="apple-touch-icon" href="icon/icon.png">
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
         <title>Beyond Demo</title>
+
+        <style>
+            body {
+                background-color: black;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+        </style>
     </head>
     <body style="background-color: black">
+        <!-- 1. Bundled JSON Data (Bypasses CORS and sandboxed iframe errors) -->
+        <script type="text/javascript" src="js/data.bundle.js"></script>
+
+        <!-- 2. Core Libraries -->
         <script type="text/javascript" src="js/libs/pixi.js"></script>
         <script type="text/javascript" src="js/libs/pixi-tilemap.js"></script>
         <script type="text/javascript" src="js/libs/pixi-picture.js"></script>
         <script type="text/javascript" src="js/libs/fpsmeter.js"></script>
         <script type="text/javascript" src="js/libs/lz-string.js"></script>
         <script type="text/javascript" src="js/libs/iphone-inline-video.browser.js"></script>
+
+        <!-- 3. RPG Maker MV Engine Scripts -->
         <script type="text/javascript" src="js/rpg_core.js"></script>
         <script type="text/javascript" src="js/rpg_managers.js"></script>
         <script type="text/javascript" src="js/rpg_objects.js"></script>
@@ -24,6 +42,80 @@
         <script type="text/javascript" src="js/rpg_sprites.js"></script>
         <script type="text/javascript" src="js/rpg_windows.js"></script>
         <script type="text/javascript" src="js/plugins.js"></script>
+
+        <!-- 4. Web Engine Safety & Loading Patches -->
+        <script type="text/javascript">
+            // Patch 1: Catch Gamepad Permission Errors (Prevents iframe crash)
+            if (typeof Input !== 'undefined') {
+                Input._pollGamepads = function() {
+                    if (navigator.getGamepads) {
+                        try {
+                            var gamepads = navigator.getGamepads();
+                            if (gamepads) {
+                                for (var i = 0; i < gamepads.length; i++) {
+                                    var gamepad = gamepads[i];
+                                    if (gamepad && gamepad.connected) {
+                                        this._updateGamepadState(gamepad);
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            // Silently ignore permissions policy blocks
+                        }
+                    }
+                };
+            }
+
+            // Patch 2: Safe DataManager Override with Recursion Guard
+            if (typeof DataManager !== 'undefined') {
+                var _original_DataManager_loadDataFile = DataManager.loadDataFile;
+                var _isBypassingDataLoad = false;
+
+                DataManager.loadDataFile = function(name, src) {
+                    if (window.$dataBundled && window.$dataBundled[src]) {
+                        window[name] = window.$dataBundled[src];
+                        this.onLoad(window[name]);
+                        return;
+                    }
+
+                    if (!_isBypassingDataLoad) {
+                        _isBypassingDataLoad = true;
+                        _original_DataManager_loadDataFile.call(this, name, src);
+                        _isBypassingDataLoad = false;
+                    }
+                };
+            }
+
+            // Patch 3: Responsive Aspect Ratio Scaler
+            function applycanvasmode() {
+                var canvas = document.querySelector("#GameCanvas");
+                var video = document.querySelector("#GameVideo");
+                var upperCanvas = document.querySelector("#UpperCanvas");
+
+                if (!canvas) return;
+
+                var maxW = window.innerWidth;
+                var maxH = window.innerHeight;
+                var w = maxW;
+                var h = maxH;
+
+                if (maxW * 0.75 > maxH) {
+                    h = maxH;
+                    w = Math.floor(maxH / 3 * 4);
+                } else {
+                    w = maxW;
+                    h = Math.floor(maxW / 4 * 3);
+                }
+
+                canvas.style.width = w + "px";
+                canvas.style.height = h + "px";
+                if (video) { video.style.width = w + "px"; video.style.height = h + "px"; }
+                if (upperCanvas) { upperCanvas.style.width = w + "px"; upperCanvas.style.height = h + "px"; }
+            }
+            setInterval(applycanvasmode, 100);
+        </script>
+
+        <!-- 5. Main Game Boot Script -->
         <script type="text/javascript" src="js/main.js"></script>
     </body>
 </html>
