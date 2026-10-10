@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <!-- Custom jsDelivr CDN link for your GitHub repository -->
-   <base href="https://raw.githack.com/FALATRO/Beyond/master/www/">
+        <!-- Custom Raw.Githack CDN link for your GitHub repository -->
+        <base href="https://raw.githack.com/FALATRO/Beyond/master/www/">
 
         <meta charset="UTF-8">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -105,7 +105,17 @@
                 };
             }
 
-            // Patch D: Responsive Aspect Ratio Scaler
+            // Patch D: Fix WebGL Cross-Origin (CORS) Security Errors for CDN Images
+            if (typeof Bitmap !== 'undefined') {
+                Bitmap.prototype._createImage = function() {
+                    this._image = new Image();
+                    this._image.crossOrigin = 'anonymous';
+                    this._image.onload = this._loadListener.bind(this);
+                    this._image.onerror = this._errorListener.bind(this);
+                };
+            }
+
+            // Patch E: Responsive Aspect Ratio Scaler
             function applycanvasmode() {
                 var canvas = document.querySelector("#GameCanvas");
                 var video = document.querySelector("#GameVideo");
@@ -132,22 +142,6 @@
                 if (upperCanvas) { upperCanvas.style.width = w + "px"; upperCanvas.style.height = h + "px"; }
             }
             setInterval(applycanvasmode, 100);
-            // Patch E: Fix WebGL Cross-Origin (CORS) Security Errors for CDN Images
-            if (typeof Bitmap !== 'undefined') {
-                var _Bitmap__createImage = Bitmap.prototype._createImage;
-                Bitmap.prototype._createImage = function() {
-                    if (_Bitmap__createImage) {
-                        _Bitmap__createImage.call(this);
-                    } else {
-                        this._image = new Image();
-                        this._image.onload = this._loadListener.bind(this);
-                        this._image.onerror = this._errorListener.bind(this);
-                    }
-                    if (this._image) {
-                        this._image.crossOrigin = 'anonymous';
-                    }
-                };
-            }
         </script>
 
         <!-- 5. Main Game Boot Script -->
