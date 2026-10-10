@@ -132,8 +132,7 @@
                 if (upperCanvas) { upperCanvas.style.width = w + "px"; upperCanvas.style.height = h + "px"; }
             }
             setInterval(applycanvasmode, 100);
-        </script>
-// Patch E: Fix WebGL Cross-Origin (CORS) Security Errors for CDN Images
+            // Patch E: Fix WebGL Cross-Origin (CORS) Security Errors for CDN Images
             if (typeof Bitmap !== 'undefined') {
                 var _Bitmap__createImage = Bitmap.prototype._createImage;
                 Bitmap.prototype._createImage = function() {
@@ -149,6 +148,8 @@
                     }
                 };
             }
+        </script>
+
         <!-- 5. Main Game Boot Script -->
         <script type="text/javascript" src="js/main.js"></script>
     </body>
