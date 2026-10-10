@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
     <head>
-        
         <!-- Custom Raw.Githack CDN link for your GitHub repository -->
         <base href="https://raw.githack.com/FALATRO/Beyond/master/www/">
 
@@ -106,17 +105,41 @@
                 };
             }
 
-            // Patch D: Fix WebGL Cross-Origin (CORS) Security Errors for CDN Images
-            if (typeof Bitmap !== 'undefined') {
-                Bitmap.prototype._createImage = function() {
-                    this._image = new Image();
-                    this._image.crossOrigin = 'anonymous';
-                    this._image.onload = this._loadListener.bind(this);
-                    this._image.onerror = this._errorListener.bind(this);
+            // Patch D: Intercept and neutralize MadeWithMv splash screen
+            if (typeof ImageManager !== 'undefined') {
+                var _ImageManager_loadSystem = ImageManager.loadSystem;
+                ImageManager.loadSystem = function(filename) {
+                    if (filename === 'MadeWithMv') {
+                        return this.loadEmptyBitmap();
+                    }
+                    return _ImageManager_loadSystem.call(this, filename);
                 };
             }
 
-            // Patch E: Responsive Aspect Ratio Scaler
+            // Patch E: Fallback for Bitmap.getPixel when canvas is tainted by cross-origin data
+            if (typeof Bitmap !== 'undefined') {
+                var _Bitmap_getPixel = Bitmap.prototype.getPixel;
+                Bitmap.prototype.getPixel = function(x, y) {
+                    try {
+                        return _Bitmap_getPixel.call(this, x, y);
+                    } catch (e) {
+                        return '#ffffff';
+                    }
+                };
+            }
+
+            // Patch F: Fix PixiJS v4 Cross-Origin Texture Loading
+            if (typeof PIXI !== 'undefined' && PIXI.BaseTexture) {
+                PIXI.BaseTexture.defaultCrossOrigin = 'anonymous';
+                var _BaseTexture_fromImage = PIXI.BaseTexture.fromImage;
+                if (_BaseTexture_fromImage) {
+                    PIXI.BaseTexture.fromImage = function(imageUrl, crossorigin, scaleMode) {
+                        return _BaseTexture_fromImage.call(this, imageUrl, crossorigin || 'anonymous', scaleMode);
+                    };
+                }
+            }
+
+            // Patch G: Responsive Aspect Ratio Scaler
             function applycanvasmode() {
                 var canvas = document.querySelector("#GameCanvas");
                 var video = document.querySelector("#GameVideo");
@@ -143,55 +166,6 @@
                 if (upperCanvas) { upperCanvas.style.width = w + "px"; upperCanvas.style.height = h + "px"; }
             }
             setInterval(applycanvasmode, 100);
-            // Patch F: Force PixiJS 4 to treat all CDN textures as anonymous cross-origin
-if (typeof PIXI !== 'undefined' && PIXI.BaseTexture) {
-    PIXI.BaseTexture.defaultCrossOrigin = function() {
-        return 'anonymous';
-    };
-}
-if (typeof PIXI !== 'undefined' && PIXI.loader) {
-    PIXI.loader.use(function(resource, next) {
-        if (resource.data && typeof resource.data.setAttribute === 'function') {
-            resource.data.crossOrigin = 'anonymous';
-        }
-        next();
-    });
-}
-// Diagnostic: Log every image URL being loaded to find the culprit
-var _origImageSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-if (_origImageSrc) {
-    Object.defineProperty(HTMLImageElement.prototype, 'src', {
-        set: function(url) {
-            console.log("Loading Asset:", url);
-            _origImageSrc.set.call(this, url);
-        },
-        get: function() {
-            return _origImageSrc.get.call(this);
-        }
-    });
-}
-// Patch: Intercept and neutralize MadeWithMv to prevent CDN/WebGL errors
-if (typeof ImageManager !== 'undefined') {
-    var _ImageManager_loadSystem = ImageManager.loadSystem;
-    ImageManager.loadSystem = function(filename) {
-        if (filename === 'MadeWithMv') {
-            return this.loadEmptyBitmap();
-        }
-        return _ImageManager_loadSystem.call(this, filename);
-    };
-}
-// Patch: Fallback for Bitmap.getPixel when canvas is tainted by cross-origin data
-if (typeof Bitmap !== 'undefined') {
-    var _Bitmap_getPixel = Bitmap.prototype.getPixel;
-    Bitmap.prototype.getPixel = function(x, y) {
-        try {
-            return _Bitmap_getPixel.call(this, x, y);
-        } catch (e) {
-            // Fallback to default white text color if canvas access is blocked
-            return '#ffffff';
-        }
-    };
-}
         </script>
 
         <!-- 5. Main Game Boot Script -->
