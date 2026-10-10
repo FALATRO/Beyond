@@ -13,6 +13,13 @@
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
         <title>Beyond Demo</title>
 
+        <!-- Fix for desktop-dependent plugins in web browsers -->
+        <script type="text/javascript">
+            if (typeof process === 'undefined') {
+                window.process = { platform: 'browser', versions: {} };
+            }
+        </script>
+
         <style>
             body {
                 background-color: black;
@@ -23,9 +30,9 @@
         </style>
     </head>
     <body style="background-color: black">
-        <!-- 1. Bundled JSON Data (Bypasses CORS and sandboxed iframe errors) -->
+        <!-- Bundled JSON Data -->
         <script type="text/javascript" src="js/data.bundle.js"></script>
-
+        <!-- ... rest of your scripts ... -->
         <!-- 2. Core Libraries -->
         <script type="text/javascript" src="js/libs/pixi.js"></script>
         <script type="text/javascript" src="js/libs/pixi-tilemap.js"></script>
