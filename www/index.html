@@ -180,6 +180,18 @@ if (typeof ImageManager !== 'undefined') {
         return _ImageManager_loadSystem.call(this, filename);
     };
 }
+// Patch: Fallback for Bitmap.getPixel when canvas is tainted by cross-origin data
+if (typeof Bitmap !== 'undefined') {
+    var _Bitmap_getPixel = Bitmap.prototype.getPixel;
+    Bitmap.prototype.getPixel = function(x, y) {
+        try {
+            return _Bitmap_getPixel.call(this, x, y);
+        } catch (e) {
+            // Fallback to default white text color if canvas access is blocked
+            return '#ffffff';
+        }
+    };
+}
         </script>
 
         <!-- 5. Main Game Boot Script -->
