@@ -170,6 +170,16 @@ if (_origImageSrc) {
         }
     });
 }
+// Patch: Intercept and neutralize MadeWithMv to prevent CDN/WebGL errors
+if (typeof ImageManager !== 'undefined') {
+    var _ImageManager_loadSystem = ImageManager.loadSystem;
+    ImageManager.loadSystem = function(filename) {
+        if (filename === 'MadeWithMv') {
+            return this.loadEmptyBitmap();
+        }
+        return _ImageManager_loadSystem.call(this, filename);
+    };
+}
         </script>
 
         <!-- 5. Main Game Boot Script -->
