@@ -142,6 +142,12 @@
                 if (upperCanvas) { upperCanvas.style.width = w + "px"; upperCanvas.style.height = h + "px"; }
             }
             setInterval(applycanvasmode, 100);
+            // Patch F: Force PixiJS 4 to treat all CDN textures as anonymous cross-origin
+if (typeof PIXI !== 'undefined' && PIXI.BaseTexture) {
+    PIXI.BaseTexture.defaultCrossOrigin = function() {
+        return 'anonymous';
+    };
+}
         </script>
 
         <!-- 5. Main Game Boot Script -->
