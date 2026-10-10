@@ -13,7 +13,7 @@
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
         <title>Beyond Demo</title>
 
-        <!-- Fix 1: Mock Node.js process variable for desktop plugins (e.g., SumRndDde) -->
+        <!-- Mock Node.js process variable for desktop plugins -->
         <script type="text/javascript">
             if (typeof process === 'undefined') {
                 window.process = { platform: 'browser', versions: {} };
@@ -30,7 +30,7 @@
         </style>
     </head>
     <body style="background-color: black">
-        <!-- 1. Bundled JSON Database (Bypasses CORS and sandboxed iframe errors) -->
+        <!-- 1. Bundled JSON Database -->
         <script type="text/javascript" src="js/data.bundle.js"></script>
 
         <!-- 2. Core JavaScript Libraries -->
@@ -52,7 +52,25 @@
 
         <!-- 4. Web Engine Safety & Error-Handling Patches -->
         <script type="text/javascript">
-            // Patch A: Catch Gamepad Permission Errors (Prevents iframe sandbox crashes)
+            // Global CORS Patch: Force anonymous crossOrigin on every image created
+            (function() {
+                var descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+                if (descriptor && descriptor.set) {
+                    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+                        set: function(url) {
+                            if (!this.crossOrigin) {
+                                this.crossOrigin = 'anonymous';
+                            }
+                            descriptor.set.call(this, url);
+                        },
+                        get: function() {
+                            return descriptor.get.call(this);
+                        }
+                    });
+                }
+            })();
+
+            // Patch A: Catch Gamepad Permission Errors
             if (typeof Input !== 'undefined') {
                 Input._pollGamepads = function() {
                     if (navigator.getGamepads) {
@@ -60,143 +78,72 @@
                             var gamepads = navigator.getGamepads();
                             if (gamepads) {
                                 for (var i = 0; i < gamepads.length; i++) {
-                                    var gamepad = gamepads[i];
-                                    if (gamepad && gamepad.connected) {
-                                        this._updateGamepadState(gamepad);
-                                    }
+                                    var gp = gamepads[i];
+                                    if (gp && gp.connected) this._updateGamepadState(gp);
                                 }
                             }
-                        } catch (e) {
-                            // Silently ignore browser permission policy blocks
-                        }
+                        } catch (e) {}
                     }
                 };
             }
 
             // Patch B: Safe DataManager Override with Recursion Guard
             if (typeof DataManager !== 'undefined') {
-                var _original_DataManager_loadDataFile = DataManager.loadDataFile;
-                var _isBypassingDataLoad = false;
-
+                var _origLoadData = DataManager.loadDataFile;
+                var _bypassing = false;
                 DataManager.loadDataFile = function(name, src) {
                     if (window.$dataBundled && window.$dataBundled[src]) {
                         window[name] = window.$dataBundled[src];
                         this.onLoad(window[name]);
                         return;
                     }
-
-                    if (!_isBypassingDataLoad) {
-                        _isBypassingDataLoad = true;
-                        _original_DataManager_loadDataFile.call(this, name, src);
-                        _isBypassingDataLoad = false;
+                    if (!_bypassing) {
+                        _bypassing = true;
+                        _origLoadData.call(this, name, src);
+                        _bypassing = false;
                     }
                 };
             }
 
             // Patch C: Prevent Canvas Crashes on Broken/Loading Images
             if (typeof Graphics !== 'undefined') {
-                var _Graphics_paintUpperCanvas = Graphics._paintUpperCanvas;
+                var _paintUpper = Graphics._paintUpperCanvas;
                 Graphics._paintUpperCanvas = function() {
-                    try {
-                        _Graphics_paintUpperCanvas.call(this);
-                    } catch (e) {
-                        // Safely skip drawing missing or broken images during load phases
-                    }
+                    try { _paintUpper.call(this); } catch (e) {}
                 };
             }
 
             // Patch D: Intercept and neutralize MadeWithMv splash screen
             if (typeof ImageManager !== 'undefined') {
-                var _ImageManager_loadSystem = ImageManager.loadSystem;
+                var _loadSys = ImageManager.loadSystem;
                 ImageManager.loadSystem = function(filename) {
-                    if (filename === 'MadeWithMv') {
-                        return this.loadEmptyBitmap();
-                    }
-                    return _ImageManager_loadSystem.call(this, filename);
+                    if (filename === 'MadeWithMv') return this.loadEmptyBitmap();
+                    return _loadSys.call(this, filename);
                 };
             }
 
-            // Patch E: Convert CDN images to local Blob URLs to bypass WebGL CORS security errors entirely
+            // Patch E: Fallback for Bitmap.getPixel
             if (typeof Bitmap !== 'undefined') {
-                Bitmap.prototype._startLoading = function() {
-                    this._clear();
-                    this._loadingState = 'loading';
-                    var self = this;
-                    
-                    fetch(this._url)
-                        .then(function(res) {
-                            if (!res.ok) throw new Error('Network response was not ok');
-                            return res.blob();
-                        })
-                        .then(function(blob) {
-                            var blobUrl = URL.createObjectURL(blob);
-                            self._image = new Image();
-                            self._image.onload = function() {
-                                self._loadingState = 'loaded';
-                                if (self._loadListener) {
-                                    self._loadListener();
-                                }
-                            };
-                            self._image.onerror = function() {
-                                if (self._errorListener) {
-                                    self._errorListener();
-                                }
-                            };
-                            self._image.src = blobUrl;
-                        })
-                        .catch(function() {
-                            self._image = new Image();
-                            self._image.crossOrigin = 'anonymous';
-                            if (self._loadListener) self._image.onload = self._loadListener.bind(self);
-                            if (self._errorListener) self._image.onerror = self._errorListener.bind(self);
-                            self._image.src = self._url;
-                        });
-                };
-
-                var _Bitmap_getPixel = Bitmap.prototype.getPixel;
+                var _getPixel = Bitmap.prototype.getPixel;
                 Bitmap.prototype.getPixel = function(x, y) {
-                    try {
-                        return _Bitmap_getPixel.call(this, x, y);
-                    } catch (e) {
-                        return '#ffffff';
-                    }
+                    try { return _getPixel.call(this, x, y); } catch (e) { return '#ffffff'; }
                 };
             }
 
-            // Patch F: Fix PixiJS v4 Cross-Origin Texture Loading
-            if (typeof PIXI !== 'undefined' && PIXI.BaseTexture) {
-                PIXI.BaseTexture.defaultCrossOrigin = 'anonymous';
-                var _BaseTexture_fromImage = PIXI.BaseTexture.fromImage;
-                if (_BaseTexture_fromImage) {
-                    PIXI.BaseTexture.fromImage = function(imageUrl, crossorigin, scaleMode) {
-                        return _BaseTexture_fromImage.call(this, imageUrl, crossorigin || 'anonymous', scaleMode);
-                    };
-                }
-            }
-
-            // Patch G: Responsive Aspect Ratio Scaler
+            // Patch F: Responsive Aspect Ratio Scaler
             function applycanvasmode() {
                 var canvas = document.querySelector("#GameCanvas");
                 var video = document.querySelector("#GameVideo");
                 var upperCanvas = document.querySelector("#UpperCanvas");
-
                 if (!canvas) return;
-
-                var maxW = window.innerWidth;
-                var maxH = window.innerHeight;
-                var w = maxW;
-                var h = maxH;
-
+                var maxW = window.innerWidth, maxH = window.innerHeight;
+                var w = maxW, h = maxH;
                 if (maxW * 0.75 > maxH) {
-                    h = maxH;
-                    w = Math.floor(maxH / 3 * 4);
+                    h = maxH; w = Math.floor(maxH / 3 * 4);
                 } else {
-                    w = maxW;
-                    h = Math.floor(maxW / 4 * 3);
+                    w = maxW; h = Math.floor(maxW / 4 * 3);
                 }
-
-                canvas.style.width = w + "px";
-                canvas.style.height = h + "px";
+                canvas.style.width = w + "px"; canvas.style.height = h + "px";
                 if (video) { video.style.width = w + "px"; video.style.height = h + "px"; }
                 if (upperCanvas) { upperCanvas.style.width = w + "px"; upperCanvas.style.height = h + "px"; }
             }
