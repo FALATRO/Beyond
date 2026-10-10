@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <!-- Custom jsDelivr CDN link for your repository -->
+        <!-- Custom jsDelivr CDN link for your GitHub repository -->
         <base href="https://cdn.jsdelivr.net/gh/FALATRO/Beyond@master/www/">
 
         <meta charset="UTF-8">
@@ -13,7 +13,7 @@
         <link rel="stylesheet" type="text/css" href="fonts/gamefont.css">
         <title>Beyond Demo</title>
 
-        <!-- Fix for desktop-dependent plugins in web browsers -->
+        <!-- Fix 1: Mock Node.js process variable for desktop plugins (e.g., SumRndDde) -->
         <script type="text/javascript">
             if (typeof process === 'undefined') {
                 window.process = { platform: 'browser', versions: {} };
@@ -30,10 +30,10 @@
         </style>
     </head>
     <body style="background-color: black">
-        <!-- Bundled JSON Data -->
+        <!-- 1. Bundled JSON Database (Bypasses CORS and sandboxed iframe errors) -->
         <script type="text/javascript" src="js/data.bundle.js"></script>
-        <!-- ... rest of your scripts ... -->
-        <!-- 2. Core Libraries -->
+
+        <!-- 2. Core JavaScript Libraries -->
         <script type="text/javascript" src="js/libs/pixi.js"></script>
         <script type="text/javascript" src="js/libs/pixi-tilemap.js"></script>
         <script type="text/javascript" src="js/libs/pixi-picture.js"></script>
@@ -41,7 +41,7 @@
         <script type="text/javascript" src="js/libs/lz-string.js"></script>
         <script type="text/javascript" src="js/libs/iphone-inline-video.browser.js"></script>
 
-        <!-- 3. RPG Maker MV Engine Scripts -->
+        <!-- 3. RPG Maker MV Engine Core Scripts -->
         <script type="text/javascript" src="js/rpg_core.js"></script>
         <script type="text/javascript" src="js/rpg_managers.js"></script>
         <script type="text/javascript" src="js/rpg_objects.js"></script>
@@ -50,9 +50,9 @@
         <script type="text/javascript" src="js/rpg_windows.js"></script>
         <script type="text/javascript" src="js/plugins.js"></script>
 
-        <!-- 4. Web Engine Safety & Loading Patches -->
+        <!-- 4. Web Engine Safety & Error-Handling Patches -->
         <script type="text/javascript">
-            // Patch 1: Catch Gamepad Permission Errors (Prevents iframe crash)
+            // Patch A: Catch Gamepad Permission Errors (Prevents iframe sandbox crashes)
             if (typeof Input !== 'undefined') {
                 Input._pollGamepads = function() {
                     if (navigator.getGamepads) {
@@ -67,13 +67,13 @@
                                 }
                             }
                         } catch (e) {
-                            // Silently ignore permissions policy blocks
+                            // Silently ignore browser permission policy blocks
                         }
                     }
                 };
             }
 
-            // Patch 2: Safe DataManager Override with Recursion Guard
+            // Patch B: Safe DataManager Override with Recursion Guard
             if (typeof DataManager !== 'undefined') {
                 var _original_DataManager_loadDataFile = DataManager.loadDataFile;
                 var _isBypassingDataLoad = false;
@@ -93,7 +93,19 @@
                 };
             }
 
-            // Patch 3: Responsive Aspect Ratio Scaler
+            // Patch C: Prevent Canvas Crashes on Broken/Loading Images
+            if (typeof Graphics !== 'undefined') {
+                var _Graphics_paintUpperCanvas = Graphics._paintUpperCanvas;
+                Graphics._paintUpperCanvas = function() {
+                    try {
+                        _Graphics_paintUpperCanvas.call(this);
+                    } catch (e) {
+                        // Safely skip drawing missing or broken images during load phases
+                    }
+                };
+            }
+
+            // Patch D: Responsive Aspect Ratio Scaler
             function applycanvasmode() {
                 var canvas = document.querySelector("#GameCanvas");
                 var video = document.querySelector("#GameVideo");
