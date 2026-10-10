@@ -148,6 +148,14 @@ if (typeof PIXI !== 'undefined' && PIXI.BaseTexture) {
         return 'anonymous';
     };
 }
+if (typeof PIXI !== 'undefined' && PIXI.loader) {
+    PIXI.loader.use(function(resource, next) {
+        if (resource.data && typeof resource.data.setAttribute === 'function') {
+            resource.data.crossOrigin = 'anonymous';
+        }
+        next();
+    });
+}
         </script>
 
         <!-- 5. Main Game Boot Script -->
