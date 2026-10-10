@@ -133,7 +133,22 @@
             }
             setInterval(applycanvasmode, 100);
         </script>
-
+// Patch E: Fix WebGL Cross-Origin (CORS) Security Errors for CDN Images
+            if (typeof Bitmap !== 'undefined') {
+                var _Bitmap__createImage = Bitmap.prototype._createImage;
+                Bitmap.prototype._createImage = function() {
+                    if (_Bitmap__createImage) {
+                        _Bitmap__createImage.call(this);
+                    } else {
+                        this._image = new Image();
+                        this._image.onload = this._loadListener.bind(this);
+                        this._image.onerror = this._errorListener.bind(this);
+                    }
+                    if (this._image) {
+                        this._image.crossOrigin = 'anonymous';
+                    }
+                };
+            }
         <!-- 5. Main Game Boot Script -->
         <script type="text/javascript" src="js/main.js"></script>
     </body>
