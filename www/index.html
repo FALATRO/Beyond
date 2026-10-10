@@ -2,7 +2,7 @@
 <html>
     <head>
         <!-- Custom Raw.Githack CDN link for your GitHub repository -->
-        <base href="https://falatro.github.io/Beyond/www/">
+        <base href="https://raw.githack.com/FALATRO/Beyond/master/www/">
 
         <meta charset="UTF-8">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -116,8 +116,43 @@
                 };
             }
 
-            // Patch E: Fallback for Bitmap.getPixel when canvas is tainted by cross-origin data
+            // Patch E: Convert CDN images to local Blob URLs to bypass WebGL CORS security errors entirely
             if (typeof Bitmap !== 'undefined') {
+                Bitmap.prototype._startLoading = function() {
+                    this._clear();
+                    this._loadingState = 'loading';
+                    var self = this;
+                    
+                    fetch(this._url)
+                        .then(function(res) {
+                            if (!res.ok) throw new Error('Network response was not ok');
+                            return res.blob();
+                        })
+                        .then(function(blob) {
+                            var blobUrl = URL.createObjectURL(blob);
+                            self._image = new Image();
+                            self._image.onload = function() {
+                                self._loadingState = 'loaded';
+                                if (self._loadListener) {
+                                    self._loadListener();
+                                }
+                            };
+                            self._image.onerror = function() {
+                                if (self._errorListener) {
+                                    self._errorListener();
+                                }
+                            };
+                            self._image.src = blobUrl;
+                        })
+                        .catch(function() {
+                            self._image = new Image();
+                            self._image.crossOrigin = 'anonymous';
+                            if (self._loadListener) self._image.onload = self._loadListener.bind(self);
+                            if (self._errorListener) self._image.onerror = self._errorListener.bind(self);
+                            self._image.src = self._url;
+                        });
+                };
+
                 var _Bitmap_getPixel = Bitmap.prototype.getPixel;
                 Bitmap.prototype.getPixel = function(x, y) {
                     try {
